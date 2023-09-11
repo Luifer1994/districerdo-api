@@ -42,6 +42,7 @@ class RouteServiceProvider extends ServiceProvider
                 $this->loadRoutesFrom(base_path('routes/Invoices/InvoiceRoutes.php'));
                 $this->loadRoutesFrom(base_path('routes/Categories/CategoryRoutes.php'));
                 $this->loadRoutesFrom(base_path('routes/Providers/ProviderRoutes.php'));
+                $this->loadRoutesFrom(base_path('routes/Purchases/PurchaseRoutes.php'));
             });
 
         Route::middleware('web')

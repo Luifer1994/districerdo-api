@@ -29,7 +29,7 @@ class CreateProviderRequest extends FormRequest
         return [
             'name'              => 'required|string',
             'last_name'         => 'required|string',
-            'email'             => 'required|email|unique:Providers,email',
+            'email'             => 'required|email|unique:providers,email',
             'phone'             => 'nullable|string',
             'document_number'   => 'required|string',
             'address'           => 'required|string',

@@ -8,13 +8,11 @@ use App\Http\Modules\Invoices\Repositories\InvoiceRepository;
 use App\Http\Modules\Invoices\Requests\CreateOrUpdateInvoiceRequest;
 use App\Http\Modules\Invoices\Services\InvoiceService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class InvoiceController extends Controller
 {
-    protected $InvoiceRepository;
-    protected $InvoiceService;
+    protected $InvoiceRepository,$InvoiceService;
 
     public function __construct(InvoiceRepository $InvoiceRepository, InvoiceService $InvoiceService)
     {
@@ -32,9 +30,12 @@ class InvoiceController extends Controller
     public function index(PaginateBaseRequest $request): JsonResponse
     {
         try {
-            $limit    = $request->limit ?? 10;
-            $search   = $request->search ?? '';
-            $data = $this->InvoiceService->getAllInvoices($limit, $search);
+            $limit = $request->limit ?? 10;
+            $search = $request->search ?? '';
+            $state = $request->state ?? '';
+            $dateStar = $request->date_start ?? '';
+            $dateEnd = $request->date_end ?? '';
+            $data = $this->InvoiceRepository->getAllInvoices($limit, $search, $state, $dateStar, $dateEnd);
 
             return $this->successResponse($data, 'Facturas listadas com éxito');
         } catch (\Throwable $th) {

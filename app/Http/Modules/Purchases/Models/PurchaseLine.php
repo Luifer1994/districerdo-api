@@ -4,15 +4,17 @@
  * Created by Reliese Model.
  */
 
-namespace App\Models;
+ namespace App\Http\Modules\Purchases\Models;
 
+use App\Http\Modules\Products\Models\Product;
+use App\Models\Entrance;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class PurchaseLine
- * 
+ *
  * @property int $id
  * @property float $price
  * @property float $quantity
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $product_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
+ *
  * @property Product $product
  * @property Purchase $purchase
  * @property Collection|Entrance[] $entrances
@@ -45,17 +47,17 @@ class PurchaseLine extends Model
 		'product_id'
 	];
 
-	public function product()
+	public function Product()
 	{
 		return $this->belongsTo(Product::class);
 	}
 
-	public function purchase()
+	public function Purchase()
 	{
 		return $this->belongsTo(Purchase::class);
 	}
 
-	public function entrances()
+	public function Entrances()
 	{
 		return $this->hasMany(Entrance::class);
 	}

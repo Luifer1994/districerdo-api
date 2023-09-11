@@ -23,25 +23,32 @@ class InvoiceRepository extends RepositoryBase
      * @return object
      * @author Luifer Almendrales
      */
-    public function getAllInvoices(int $limit, string $search): object
+    public function getAllInvoices(int $limit, string $search, string $state, string $dateStart, string $dateEnd): object
     {
         return $this->InvoiceModel
-            ->select('id', 'code', 'client_id', 'state','created_at')
-            ->where('code', 'like', '%' . $search . '%')
+            ->select('id', 'code', 'client_id', 'state', 'created_at')
+
             ->with([
                 'Client' => function ($query) {
                     $query->select('id', 'name', 'last_name')
                         ->selectRaw('CONCAT(name, " ", last_name) as full_name');
-                },
-                'InvoiceLines' => function ($query) {
-                    $query->select('id', 'invoice_id', 'service_id', 'quantity', 'price', 'percentage_tax')
-                        ->with(['service:id,name', 'InvoiceLineSupplies' => function ($query) {
-                            $query->select('id', 'description', 'price', 'percentage_tax', 'quantity', 'invoice_line_id');
-                        }])
-                        ->withCount(['InvoiceLineSupplies']);
                 }
             ])
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(price * quantity), 0)')
+                    ->from('invoice_lines')
+                    ->whereColumn('invoice_id', 'invoices.id');
+            }, 'total')
             ->withCount(['InvoiceLines'])
+            ->when($state, function ($query, $state) {
+                return $query->where('status', $state);
+            })
+            ->when(($dateStart && $dateEnd), function ($query) use ($dateStart, $dateEnd) {
+                $startDate = \DateTime::createFromFormat('d-m-Y', $dateStart)->format('Y-m-d');
+                $endDate = \DateTime::createFromFormat('d-m-Y', $dateEnd)->format('Y-m-d');
+                return $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            })
+            ->where('code', 'like', '%' . $search . '%')
             ->orderBy('id', 'desc')
             ->paginate($limit);
     }

@@ -34,29 +34,34 @@ class ProviderPermissionsManyCommand extends Command
             $permisions = [
                 [
                     'name'        => 'providers-module',
-                    'description' => 'Módulo de clientes',
-                    'group'       => 'Clientes'
+                    'description' => 'Módulo de Proveedores',
+                    'group'       => 'Proveedores'
                 ],
                 [
                     "name"        => 'providers-create',
-                    "description" => 'Crear clientes',
-                    "group"       => 'Clientes'
+                    "description" => 'Crear Proveedores',
+                    "group"       => 'Proveedores'
                 ],
                 [
                     "name"        => 'providers-list',
-                    "description" => 'Listar clientes',
-                    "group"       => 'Clientes'
+                    "description" => 'Listar Proveedores',
+                    "group"       => 'Proveedores'
                 ],
                 [
                     "name"        => 'providers-show',
-                    "description" => 'Ver clientes',
-                    "group"       => 'Clientes'
+                    "description" => 'Ver Proveedores',
+                    "group"       => 'Proveedores'
                 ],
                 [
                     "name"        => 'providers-update',
-                    "description" => 'Actualizar clientes',
-                    "group"       => 'Clientes'
-                ]
+                    "description" => 'Actualizar Proveedores',
+                    "group"       => 'Proveedores'
+                ],
+                [
+                    "name"        => 'providers-search',
+                    "description" => 'Buscar Proveedores',
+                    "group"       => 'Proveedores'
+                ],
             ];
             $role        = Role::where('name', 'admin')->first();
             foreach ($permisions as  $value) {

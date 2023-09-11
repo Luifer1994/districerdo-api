@@ -29,43 +29,43 @@ class ProductPermissionsManyCommand extends Command
      */
     public function handle(): void
     {
-        $this->line('Creando permisos de Producstos...');
+        $this->line('Creando permisos de Productos...');
         try {
             $permisions = [
                 [
                     'name'        => 'products-module',
-                    'description' => 'Módulo de Producstos',
-                    'group'       => 'Producstos',
+                    'description' => 'Módulo de Productos',
+                    'group'       => 'Productos',
                 ],
                 [
                     "name"        => 'products-create',
-                    "description" => 'Crear Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Crear Productos',
+                    "group"       => 'Productos',
                 ],
                 [
                     "name"        => 'products-list',
-                    "description" => 'Listar Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Listar Productos',
+                    "group"       => 'Productos',
                 ],
                 [
                     "name"        => 'products-show',
-                    "description" => 'Ver Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Ver Productos',
+                    "group"       => 'Productos',
                 ],
                 [
                     "name"        => 'products-destroy',
-                    "description" => 'Eliminar Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Eliminar Productos',
+                    "group"       => 'Productos',
                 ],
                 [
                     "name"        => 'products-update',
-                    "description" => 'Actualizar Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Actualizar Productos',
+                    "group"       => 'Productos',
                 ],
                 [
                     "name"        => 'products-search',
-                    "description" => 'Buscar Producstos',
-                    "group"       => 'Producstos',
+                    "description" => 'Buscar Productos',
+                    "group"       => 'Productos',
                 ],
             ];
             $role        = Role::where('name', 'admin')->first();

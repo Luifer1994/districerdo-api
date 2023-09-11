@@ -26,14 +26,22 @@ class ProductRepository extends RepositoryBase
     public function getAllProducts(int $limit, string $search): object
     {
         return $this->modelProduct
-            ->select('id', 'name', 'description', 'sku', 'category_id')
+            ->select('id', 'name', 'description', 'sku', 'category_id','minimum_stock')
             ->with(['category:id,name'])
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(quantity), 0)')
+                    ->from('inventories')
+                    ->whereColumn('product_id', 'products.id');
+            }, 'stock')
             ->where('name', 'like', "%$search%")
             ->orWhere('description', 'like', "%$search%")
             ->orWhere('sku', 'like', "%$search%")
             ->orderBy('id', 'desc')
             ->paginate($limit);
     }
+
+
+
 
     /**
      * Get all Products is active.
@@ -44,13 +52,14 @@ class ProductRepository extends RepositoryBase
     public function searchProducts(string $search): object
     {
         return $this->modelProduct
-            ->select('id', 'name', 'description', 'sku', 'category_id')
+            ->select('id', 'name', 'description', 'sku', 'category_id','minimum_stock')
+            ->selectRaw('CONCAT(sku, " - ", name) as name')
             ->with(['category:id,name'])
             ->where('name', 'like', "%$search%")
             ->orWhere('description', 'like', "%$search%")
             ->orWhere('sku', 'like', "%$search%")
             ->orderBy('name', 'desc')
-            ->limit(5)
+            ->limit(3)
             ->get();
     }
 
@@ -63,13 +72,13 @@ class ProductRepository extends RepositoryBase
     public function findById(int $id): ?Product
     {
         return $this->modelProduct
-            ->select('id', 'name', 'description', 'sku','category_id')
+            ->select('id', 'name', 'description', 'sku', 'category_id','minimum_stock')
             ->with(['category:id,name'])
             ->where(['id' => $id])
             ->first();
     }
 
-   /**
+    /**
      * Find a Product by id.
      *
      * @param  string $id
@@ -78,7 +87,7 @@ class ProductRepository extends RepositoryBase
     public function findBySku(string $id): ?Product
     {
         return $this->modelProduct
-            ->select('id', 'name', 'description', 'sku')
+            ->select('id', 'name', 'description', 'sku','minimum_stock')
             ->where(['sku' => $id])
             ->first();
     }

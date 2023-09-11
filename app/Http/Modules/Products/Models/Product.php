@@ -7,6 +7,8 @@
 namespace App\Http\Modules\Products\Models;
 
 use App\Http\Modules\Categories\Models\Category;
+use App\Http\Modules\Entrances\Models\Entrance;
+use App\Http\Modules\Inventories\Models\Inventory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -46,7 +48,8 @@ class Product extends Model
 		'description',
 		'sku',
 		'category_id',
-		'user_id'
+		'user_id',
+        'minimum_stock'
 	];
 
 	public function Category()
@@ -59,7 +62,7 @@ class Product extends Model
 		return $this->belongsTo(User::class);
 	}
 
-	public function entrances()
+	public function Entrances()
 	{
 		return $this->hasMany(Entrance::class);
 	}
@@ -78,4 +81,14 @@ class Product extends Model
 	{
 		return $this->hasMany(PurchaseLine::class);
 	}
+
+    public function QuantityEntrance()
+    {
+        return $this->Entrances()->sum('quantity');
+    }
+
+    public function Inventory()
+    {
+        return $this->hasMany(Inventory::class);
+    }
 }

@@ -16,6 +16,7 @@ Route::prefix('providers')->group(function () {
             Route::get('show/{id}', 'show')->middleware('permission:providers-show');
             Route::post('create', 'store')->middleware('permission:providers-create');
             Route::put('update/{id}', 'update')->middleware('permission:providers-update');
+            Route::get('search', 'search')->middleware('permission:providers-search');
         });
     });
 });

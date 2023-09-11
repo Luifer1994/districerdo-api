@@ -29,6 +29,7 @@ class CreateOrUpdateProductRequest extends FormRequest
             'name'                  => 'required|string:max:100',
             'description'           => 'nullable|string:max:255',
             'category_id'           => 'required|integer|exists:categories,id',
+            'minimum_stock'         => 'required|numeric'
         ];
     }
 
@@ -48,6 +49,7 @@ class CreateOrUpdateProductRequest extends FormRequest
             'category_id.required'          => 'La categoría es requerida',
             'category_id.integer'           => 'La categoría debe ser un número entero',
             'category_id.exists'            => 'La categoría no existe',
+            'minimum_stock.required'        => 'El stock mínimo es requerido',
         ];
     }
 

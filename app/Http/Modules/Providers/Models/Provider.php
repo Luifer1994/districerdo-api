@@ -5,6 +5,10 @@
  */
 
 namespace App\Http\Modules\Providers\Models;
+
+use App\Http\Modules\Cities\Models\City;
+use App\Http\Modules\DocumentTypes\Models\DocumentType;
+use App\Models\Purchase;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -50,17 +54,17 @@ class Provider extends Model
 		'city_id'
 	];
 
-	public function city()
+	public function City()
 	{
 		return $this->belongsTo(City::class);
 	}
 
-	public function document_type()
+	public function DocumentType()
 	{
 		return $this->belongsTo(DocumentType::class);
 	}
 
-	public function purchases()
+	public function Purchases()
 	{
 		return $this->hasMany(Purchase::class);
 	}

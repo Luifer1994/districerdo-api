@@ -39,6 +39,7 @@ class CreatePermissionsManyCommand extends Command
             $this->call('create-permission-products');
             $this->call('create-permission-invoices');
             $this->call('create-permission-providers');
+            $this->call('create-permission-purchases');
         } catch (\Throwable $th) {
             $this->error($th->getMessage());
         }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Modules\Invoices\Services;
 
+use App\Http\Modules\Inventories\Repositories\InventoryRepository;
 use App\Http\Modules\Invoices\Models\Invoice;
 use App\Http\Modules\Invoices\Models\InvoiceLine;
 use App\Http\Modules\Invoices\Models\InvoiceLineSupply;
@@ -9,61 +10,26 @@ use App\Http\Modules\Invoices\Repositories\InvoiceLineRepository;
 use App\Http\Modules\Invoices\Repositories\InvoiceLineSupplyRepository;
 use App\Http\Modules\Invoices\Repositories\InvoiceRepository;
 use App\Http\Modules\Invoices\Requests\CreateOrUpdateInvoiceRequest;
+use App\Http\Modules\Outputs\Models\Output;
+use App\Http\Modules\Outputs\Models\OutputInvoiceLine;
+use App\Http\Modules\Outputs\Repositories\OutputInvoiceLineRepository;
+use App\Http\Modules\Outputs\Repositories\OutputRepository;
+use App\Traits\GenerateCodeRandom;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class InvoiceService
 {
-    protected $InvoiceRepository;
-    protected $InvoiceLineRepository;
+    use GenerateCodeRandom;
+    protected $InvoiceRepository, $InvoiceLineRepository, $InventoryRepository, $OutputRepository, $OutputInvoiceLineRepository;
 
-    public function __construct(InvoiceRepository $InvoiceRepository, InvoiceLineRepository $InvoiceLineRepository)
+    public function __construct(InvoiceRepository $InvoiceRepository, InvoiceLineRepository $InvoiceLineRepository, InventoryRepository $InventoryRepository, OutputRepository $OutputRepository, OutputInvoiceLineRepository $OutputInvoiceLineRepository)
     {
         $this->InvoiceRepository           = $InvoiceRepository;
         $this->InvoiceLineRepository       = $InvoiceLineRepository;
-    }
-
-    /**
-     * Get all Invoices with pagination.
-     *
-     * @param int $limit
-     * @param string $search
-     * @return object
-     */
-    function getAllInvoices(int $limit, string $search): object
-    {
-        $results = $this->InvoiceRepository->getAllInvoices($limit, $search);
-
-        $results->getCollection()->map(function ($invoice) {
-            $invoice->total = 0;
-            $invoice->total_supplies = 0;
-            $invoice->total_services = 0;
-
-            foreach ($invoice->InvoiceLines as $invoiceLine) {
-                $invoiceLine->subtotal  =  $invoiceLine->quantity * $invoiceLine->price;
-                $invoiceLine->total_tax =  $invoiceLine->subtotal * ($invoiceLine->percentage_tax / 100);
-                $invoiceLine->total     =  $invoiceLine->subtotal + $invoiceLine->total_tax;
-                $invoice->total         += $invoiceLine->total;
-                $invoice->total_services += $invoiceLine->total - $invoiceLine->total_tax;
-
-                foreach ($invoiceLine->InvoiceLineSupplies as $supply) {
-                    $supply->subtotal        =  $supply->quantity * $supply->price;
-                    $supply->total_tax       =  $supply->subtotal * ($supply->percentage_tax / 100);
-                    $supply->total           =  $supply->subtotal + $supply->total_tax;
-                    $invoice->total          += $supply->total;
-                    $invoiceLine->subtotal   += $supply->subtotal;
-                    $invoiceLine->total_tax  += $supply->total_tax;
-                    $invoiceLine->total      += $supply->total;
-                    $invoice->total_supplies += $supply->total - $supply->total_tax;
-                }
-            }
-
-            $invoice->subtotal = $invoice->InvoiceLines->sum('subtotal');
-            $invoice->total_tax = $invoice->InvoiceLines->sum('total_tax');
-            return $invoice;
-        });
-
-        return $results;
+        $this->InventoryRepository          = $InventoryRepository;
+        $this->OutputRepository            = $OutputRepository;
+        $this->OutputInvoiceLineRepository = $OutputInvoiceLineRepository;
     }
 
     /**
@@ -74,22 +40,54 @@ class InvoiceService
      */
     function CreateInvoice(CreateOrUpdateInvoiceRequest $request): object
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $requestData = [
+            $request->merge([
                 'code' => $this->createUniqueCode(),
                 'user_id' => auth()->user()->id,
-                'client_id' => $request->client_id,
-                'state' => $request->state,
-            ];
+            ]);
 
-            $invoice = $this->InvoiceRepository->save(new Invoice($requestData));
+            $invoice = $this->InvoiceRepository->save(new Invoice($request->all()));
 
             foreach ($request->invoice_lines as $invoiceLineData) {
+                $Inventory = $this->InventoryRepository->findInventoryByProductIdAndBatchId($invoiceLineData['product_id'], $invoiceLineData['batch_id']);
+                if (!$Inventory) {
+                    DB::rollBack();
+                    return (object) [
+                        'status' => false,
+                        'message' => 'No se encontró el producto ' . $invoiceLineData['product_id'] . ' con el lote indicado',
+                        'data' => null
+                    ];
+                }
+
+                if ($Inventory->quantity < $invoiceLineData['quantity']) {
+                    DB::rollBack();
+                    return (object) [
+                        'status' => false,
+                        'message' => 'La cantidad a facturar del producto ' . $invoiceLineData['product_id'] . ' es mayor a la cantidad en existencia',
+                        'data' => null
+                    ];
+                }
+
                 $invoiceLine = new InvoiceLine($invoiceLineData);
                 $invoiceLine->invoice_id = $invoice->id;
                 $invoiceLine = $this->InvoiceLineRepository->save($invoiceLine);
+
+                $newOutput = $this->OutputRepository->save(new Output([
+                    'price' => $invoiceLineData['price'],
+                    'quantity' => $invoiceLineData['quantity'],
+                    'batch_id' => $invoiceLineData['batch_id'],
+                    'product_id' => $invoiceLineData['product_id'],
+                    'user_id' => auth()->user()->id,
+                ]));
+
+                $this->OutputInvoiceLineRepository->save(new OutputInvoiceLine([
+                    'output_id' => $newOutput->id,
+                    'invoice_line_id' => $invoiceLine->id
+                ]));
+
+                $Inventory->quantity -= $invoiceLineData['quantity'];
+                $this->InventoryRepository->save($Inventory);
             }
 
             DB::commit();
@@ -117,7 +115,7 @@ class InvoiceService
      */
     public function createUniqueCode(): string
     {
-        $code = Str::upper(Str::random(8));
+        $code = $this->generateCode(8);
         $codeExist = $this->InvoiceRepository->getInvoiceByCode($code);
 
         if ($codeExist)

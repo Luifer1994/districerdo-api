@@ -5,6 +5,7 @@ namespace App\Http\Modules\Invoices\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class CreateOrUpdateInvoiceRequest extends FormRequest
 {
@@ -26,17 +27,14 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            'state'                                                 => 'required|in:draft,canceled,paid,pending',
+            'state'                                                 => 'required|in:CANCELLED,PAID,PENDING',
             'observation'                                           => 'nullable|string',
             'client_id'                                             => 'required|exists:clients,id',
             'invoice_lines'                                         => 'required|array',
             'invoice_lines.*.price'                                 => 'required|numeric',
             'invoice_lines.*.quantity'                              => 'required|integer|min:1',
-            'invoice_lines.*.service_id'                            => 'required|exists:services,id',
-            'invoice_lines.*.invoice_line_supplies'                 => 'nullable|array',
-            'invoice_lines.*.invoice_line_supplies.*.description'   => 'required|string',
-            'invoice_lines.*.invoice_line_supplies.*.price'         => 'required|numeric',
-            'invoice_lines.*.invoice_line_supplies.*.quantity'      => 'required|integer|min:1',
+            'invoice_lines.*.product_id'                            => 'required|exists:products,id',
+            'invoice_lines.*.batch_id'                              => 'required|exists:batches,id',
         ];
 
         if ($this->getMethod() == 'PUT') {
@@ -54,32 +52,26 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
     public function messages()
     {
         return [
-            'state.required'                                               => 'El estado es obligatorio.',
-            'state.in'                                                     => 'El estado debe ser "borrador", "cancelado", "pagado" o "pendiente".',
-            'observation.string'                                           => 'La observación debe ser una cadena de texto.',
-            'client_id.required'                                           => 'El cliente es obligatorio.',
-            'client_id.exists'                                             => 'El cliente especificado no existe.',
-            'invoice_lines.required'                                       => 'Las líneas de factura son obligatorias.',
-            'invoice_lines.array'                                          => 'Las líneas de factura deben ser un arreglo.',
-            'invoice_lines.*.price.required'                               => 'El precio de la línea de factura es obligatorio.',
-            'invoice_lines.*.price.numeric'                                => 'El precio de la línea de factura debe ser numérico.',
-            'invoice_lines.*.quantity.required'                            => 'La cantidad de la línea de factura es obligatoria.',
-            'invoice_lines.*.quantity.integer'                             => 'La cantidad de la línea de factura debe ser un número entero.',
-            'invoice_lines.*.quantity.min'                                 => 'La cantidad de la línea de factura debe ser al menos 1.',
-            'invoice_lines.*.service_id.required'                          => 'El servicio de la línea de factura es obligatorio.',
-            'invoice_lines.*.service_id.exists'                            => 'El servicio de la línea de factura especificado no existe.',
-            'invoice_lines.*.invoice_line_supplies.array'                  => 'Los suministros de la línea de factura deben ser un arreglo.',
-            'invoice_lines.*.invoice_line_supplies.*.description.required' => 'La descripción del suministro de la línea de factura es obligatoria.',
-            'invoice_lines.*.invoice_line_supplies.*.description.string'   => 'La descripción del suministro de la línea de factura debe ser una cadena de texto.',
-            'invoice_lines.*.invoice_line_supplies.*.price.required'       => 'El precio del suministro de la línea de factura es obligatorio.',
-            'invoice_lines.*.invoice_line_supplies.*.price.numeric'        => 'El precio del suministro de la línea de factura debe ser numérico.',
-            'invoice_lines.*.invoice_line_supplies.*.quantity.required'    => 'La cantidad del suministro de la línea de factura es obligatoria.',
-            'invoice_lines.*.invoice_line_supplies.*.quantity.integer'     => 'La cantidad del suministro de la línea de factura debe ser un número entero.',
-            'invoice_lines.*.invoice_line_supplies.*.quantity.min'         => 'La cantidad del suministro de la línea de factura debe ser al menos 1.',
-            'code.required'                                                => 'El código de la factura es obligatorio.',
-            'code.string'                                                  => 'El código de la factura debe ser una cadena de texto.',
-            'code.max'                                                     => 'El código de la factura no debe exceder los 8 caracteres.',
-            'code.unique'                                                  => 'El código de la factura ya está en uso.',
+            'state.required'                                        => 'El estado es requerido',
+            'state.in'                                              => 'El estado debe ser CANCELLED,PAID,PENDING',
+            'observation.string'                                    => 'La observación debe ser un texto',
+            'client_id.required'                                    => 'El cliente es requerido',
+            'client_id.exists'                                      => 'El cliente no existe',
+            'invoice_lines.required'                                => 'Las líneas de factura son requeridas',
+            'invoice_lines.array'                                   => 'Las líneas de factura deben ser un arreglo',
+            'invoice_lines.*.price.required'                        => 'El precio es requerido',
+            'invoice_lines.*.price.numeric'                         => 'El precio debe ser un número',
+            'invoice_lines.*.quantity.required'                     => 'La cantidad es requerida',
+            'invoice_lines.*.quantity.integer'                      => 'La cantidad debe ser un número entero',
+            'invoice_lines.*.quantity.min'                          => 'La cantidad debe ser mayor a 0',
+            'invoice_lines.*.product_id.required'                   => 'El producto es requerido',
+            'invoice_lines.*.product_id.exists'                     => 'El producto no existe',
+            'invoice_lines.*.batch_id.required'                     => 'El lote es requerido',
+            'invoice_lines.*.batch_id.exists'                       => 'El lote no existe',
+            'code.required'                                         => 'El código es requerido',
+            'code.string'                                           => 'El código debe ser un texto',
+            'code.max'                                              => 'El código debe tener máximo 8 caracteres',
+            'code.unique'                                           => 'El código ya existe',
         ];
     }
 

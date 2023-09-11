@@ -99,4 +99,22 @@ class ProviderController extends Controller
             return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
         }
     }
+
+    /**
+     * Find a Provider by name or document number.
+     *
+     * @param  PaginateBaseRequest $request
+     * @return JsonResponse
+     */
+    public function search(PaginateBaseRequest $request): JsonResponse
+    {
+        try {
+            $search = $request->search ?? '';
+            $Providers = $this->ProviderRepository->findProvider($search);
+
+            return $this->successResponse($Providers, 'Provideres listados con exito!');
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
 }
