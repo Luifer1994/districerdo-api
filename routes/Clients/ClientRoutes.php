@@ -16,6 +16,7 @@ Route::prefix('clients')->group(function () {
             Route::get('show/{id}', 'show')->middleware('permission:clients-show');
             Route::post('create', 'store')->middleware('permission:clients-create');
             Route::put('update/{id}', 'update')->middleware('permission:clients-update');
+            Route::get('search', 'searchClients')/* ->middleware('permission:clients-search') */;
         });
     });
 });

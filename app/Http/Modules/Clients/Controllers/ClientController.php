@@ -32,8 +32,26 @@ class ClientController extends Controller
     {
         try {
             $limit   = $request->limit ?? 10;
-            $searhes = $request->search ?? '';
-            $clients = $this->ClientRepository->getAllClients($limit, $searhes);
+            $search = $request->search ?? '';
+            $clients = $this->ClientRepository->getAllClients($limit, $search);
+
+            return $this->successResponse($clients, 'Clientes listados con exito!');
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Search clients by name or last name or document.
+     *
+     * @param PaginateBaseRequest $request
+     * @return JsonResponse
+     */
+    public function searchClients(PaginateBaseRequest $request): JsonResponse
+    {
+        try {
+            $search = $request->search ?? '';
+            $clients = $this->ClientRepository->searchClients($search);
 
             return $this->successResponse($clients, 'Clientes listados con exito!');
         } catch (\Throwable $th) {

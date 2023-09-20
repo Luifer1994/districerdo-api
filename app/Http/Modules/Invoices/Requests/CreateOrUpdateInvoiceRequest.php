@@ -34,7 +34,7 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
             'invoice_lines.*.price'                                 => 'required|numeric',
             'invoice_lines.*.quantity'                              => 'required|integer|min:1',
             'invoice_lines.*.product_id'                            => 'required|exists:products,id',
-            'invoice_lines.*.batch_id'                              => 'required|exists:batches,id',
+            'invoice_lines.*.batch'                              => 'required|exists:batches,code',
         ];
 
         if ($this->getMethod() == 'PUT') {
@@ -53,8 +53,8 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
     {
         return [
             'state.required'                                        => 'El estado es requerido',
-            'state.in'                                              => 'El estado debe ser CANCELLED,PAID,PENDING',
-            'observation.string'                                    => 'La observación debe ser un texto',
+            'state.in'                                              => 'El estado debe ser CANCELLED, PAID o PENDING',
+            'observation.string'                                    => 'La observación debe ser una cadena de texto',
             'client_id.required'                                    => 'El cliente es requerido',
             'client_id.exists'                                      => 'El cliente no existe',
             'invoice_lines.required'                                => 'Las líneas de factura son requeridas',
@@ -66,10 +66,10 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
             'invoice_lines.*.quantity.min'                          => 'La cantidad debe ser mayor a 0',
             'invoice_lines.*.product_id.required'                   => 'El producto es requerido',
             'invoice_lines.*.product_id.exists'                     => 'El producto no existe',
-            'invoice_lines.*.batch_id.required'                     => 'El lote es requerido',
-            'invoice_lines.*.batch_id.exists'                       => 'El lote no existe',
+            'invoice_lines.*.batch.required'                        => 'El lote es requerido',
+            'invoice_lines.*.batch.exists'                          => 'El lote no existe',
             'code.required'                                         => 'El código es requerido',
-            'code.string'                                           => 'El código debe ser un texto',
+            'code.string'                                           => 'El código debe ser una cadena de texto',
             'code.max'                                              => 'El código debe tener máximo 8 caracteres',
             'code.unique'                                           => 'El código ya existe',
         ];

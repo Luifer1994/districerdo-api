@@ -4,21 +4,24 @@ namespace App\Http\Modules\Products\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Modules\Bases\PaginateBaseRequest;
+use App\Http\Modules\Inventories\Repositories\InventoryRepository;
 use App\Http\Modules\Products\Models\Product;
 use App\Http\Modules\Products\Repositories\ProductRepository;
 use App\Http\Modules\Products\Requests\CreateOrUpdateProductRequest;
+use App\Http\Modules\Products\Requests\ValidateStockRequest;
 use App\Http\Modules\Products\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class ProductController extends Controller
 {
-    protected $ProductRepository,$productService;
+    protected $ProductRepository,$productService,$InventoryRepository;
 
-    public function __construct(ProductRepository $ProductRepository, ProductService $productService)
+    public function __construct(ProductRepository $ProductRepository, ProductService $productService, InventoryRepository $InventoryRepository)
     {
         $this->ProductRepository = $ProductRepository;
         $this->productService    = $productService;
+        $this->InventoryRepository = $InventoryRepository;
     }
 
     /**
@@ -104,6 +107,29 @@ class ProductController extends Controller
             $Product->fill($request->all());
             $Product = $this->ProductRepository->save($Product);
             return $this->successResponse($Product, 'Producto actualizado con éxito', Response::HTTP_CREATED);
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Validate stock.
+     *
+     * @param  CreateOrUpdateProductRequest $request
+     * @return JsonResponse
+     */
+    public function validateStock(ValidateStockRequest $request): JsonResponse
+    {
+        try {
+            $inventory = $this->InventoryRepository->findInventoryByProductIdAndBatchCode($request->product_id, $request->batch);
+            if (!$inventory)
+                return $this->errorResponse('El producto no tiene existencia en el lote seleccionado', Response::HTTP_NOT_FOUND);
+
+            if ($inventory->quantity < $request->quantity)
+                return $this->errorResponse('La cantidad '.$request->quantity .' a facturar del producto es mayor a la cantidad en existencia del lote (Cantidad en existencia: ' . $inventory->quantity . ')', Response::HTTP_BAD_REQUEST);
+
+            return $this->successResponse($inventory, 'Ok', Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             return $this->errorResponse($th->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -6,8 +6,8 @@
 
  namespace App\Http\Modules\Purchases\Models;
 
+use App\Http\Modules\Entrances\Models\Entrance;
 use App\Http\Modules\Products\Models\Product;
-use App\Models\Entrance;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -57,8 +57,8 @@ class PurchaseLine extends Model
 		return $this->belongsTo(Purchase::class);
 	}
 
-	public function Entrances()
+	public function Entrance()
 	{
-		return $this->hasMany(Entrance::class);
+		return $this->hasOne(Entrance::class);
 	}
 }

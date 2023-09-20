@@ -6,9 +6,9 @@
 
 namespace App\Http\Modules\Entrances\Models;
 
+use App\Http\Modules\Batchs\Models\Batch;
 use App\Http\Modules\Products\Models\Product;
 use App\Http\Modules\Users\Models\User;
-use App\Models\Batch;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 /**

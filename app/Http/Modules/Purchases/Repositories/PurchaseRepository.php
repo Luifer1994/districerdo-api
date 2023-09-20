@@ -27,7 +27,12 @@ class PurchaseRepository extends RepositoryBase
         return $this->PurchaseModel->select('id', 'code', 'provider_id', 'status', 'created_at')
             ->with([
                 'Provider' => fn ($q) => $q->select('id', 'name', 'last_name', 'document_number')
-                    ->selectRaw('CONCAT(name, " ", last_name) as full_name'), 'PurchaseLines:id,price,quantity,purchase_id,product_id'
+                    ->selectRaw('CONCAT(name, " ", last_name) as full_name'),
+                'PurchaseLines' => fn ($q) => $q->select('id', 'price', 'quantity', 'purchase_id', 'product_id')
+                    ->with(['Entrance' => function ($q) {
+                        $q->select('id', 'purchase_line_id', 'quantity', 'batch_id', 'product_id')
+                            ->with('Batch:id,code');
+                    }])
             ])
             ->withCount('PurchaseLines as total_products')
             ->selectSub(function ($query) {
@@ -44,7 +49,10 @@ class PurchaseRepository extends RepositoryBase
 
                 return $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             })
-            ->where('code', 'like', '%' . $search . '%')
+            ->when($search, function ($query, $search) {
+                return $query->where('code', $search);
+            })
+            ->orderBy('id', 'desc')
             ->paginate($limit);
     }
 
@@ -63,7 +71,10 @@ class PurchaseRepository extends RepositoryBase
                 'Provider' => fn ($q) => $q->select('id', 'name', 'last_name')
                     ->selectRaw('CONCAT(name, " ", last_name) as full_name'),
                 'PurchaseLines' => fn ($q) => $q->select('id', 'price', 'quantity', 'purchase_id', 'product_id')
-                    ->with(['Product:id,sku,name,description'])
+                    ->with(['Product:id,sku,name,description', 'Entrance' => function ($q) {
+                        $q->select('id', 'purchase_line_id', 'quantity', 'batch_id', 'product_id')
+                            ->with('Batch:id,code');
+                    }])
             ])
             ->withCount('PurchaseLines as total_products')
             ->selectSub(function ($query) {

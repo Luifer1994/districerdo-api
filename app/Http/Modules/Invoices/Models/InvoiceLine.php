@@ -2,6 +2,8 @@
 
 namespace App\Http\Modules\Invoices\Models;
 
+use App\Http\Modules\Batchs\Models\Batch;
+use App\Http\Modules\Products\Models\Product;
 use App\Http\Modules\Services\Models\Service;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -76,4 +78,14 @@ class InvoiceLine extends Model implements AuditableContract
 					->withPivot('id')
 					->withTimestamps();
 	}
+
+    /**
+     * Relation to batch.
+     *
+     * @return BelongsTo
+     */
+    public function Batch()
+    {
+        return $this->belongsTo(Batch::class);
+    }
 }

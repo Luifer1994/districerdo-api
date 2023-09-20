@@ -44,6 +44,33 @@ class ClientRepository extends RepositoryBase
     }
 
     /**
+     * Search clients by name or last name or document.
+     *
+     * @param  string $search
+     * @return object
+     */
+    public function searchClients(string $search): object
+    {
+        return $this->clientModel
+            ->select('id', 'name', 'last_name', 'email', 'phone', 'document_number', 'address', 'document_type_id', 'city_id')
+            ->selectRaw('CONCAT(name, " ", last_name) as full_name')
+            ->with(['DocumentType:id,name,code', 'City' => function ($query) {
+                $query->select('id', 'name','department_id')
+                    ->with(['department' => function ($query) {
+                        $query->select('id', 'name');
+                    }]);
+            }])
+            ->where('name', 'like', "%$search%")
+            ->orWhere('last_name', 'like', "%$search%")
+            ->orWhere('email', 'like', "%$search%")
+            ->orWhere('phone', 'like', "%$search%")
+            ->orWhere('document_number', 'like', "%$search%")
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get();
+    }
+
+    /**
      * Get a client.
      *
      * @param  int $id

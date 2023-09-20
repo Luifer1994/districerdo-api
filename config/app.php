@@ -181,6 +181,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
+        Barryvdh\DomPDF\ServiceProvider::class,
 
         /*
          * Package Service Providers...
@@ -199,7 +200,7 @@ return [
         //Auditing
         OwenIt\Auditing\AuditingServiceProvider::class,
         //Laravel permissions
-        Spatie\Permission\PermissionServiceProvider::class,
+        Spatie\Permission\PermissionServiceProvider::class
     ],
 
     /*
@@ -220,7 +221,7 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         // 'ExampleClass' => App\Example\ExampleClass::class,
         'JWTAuth' => Tymon\JWTAuth\Facades\JWTAuth::class,
-        'JWTFactory' => Tymon\JWTAuth\Facades\JWTFactory::class,
+        'JWTFactory' => Tymon\JWTAuth\Facades\JWTFactory::class
     ])->toArray(),
 
 ];

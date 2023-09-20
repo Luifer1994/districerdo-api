@@ -17,14 +17,17 @@ class InventoryRepository extends RepositoryBase
      * Find Inventory by product id and batch id.
      *
      * @param int $productId
-     * @param int $batchId
+     * @param string $batchCode
      * @return ?Inventory
      */
-    public function findInventoryByProductIdAndBatchId(int $productId, int $batchId): ?Inventory
+    public function findInventoryByProductIdAndBatchCode(int $productId, string $batchCode): ?Inventory
     {
         return $this->InventoryModel
             ->where('product_id', $productId)
-            ->where('batch_id', $batchId)
+            ->with(['batch:id,code'])
+            ->whereHas('batch', function ($query) use ($batchCode) {
+                $query->where('code', $batchCode);
+            })
             ->first();
     }
 }

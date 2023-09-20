@@ -17,6 +17,7 @@ Route::prefix('products')->group(function () {
             Route::post('create', 'store')->middleware('permission:products-create');
             Route::put('update/{id}', 'update')->middleware('permission:products-update');
             Route::get('search', 'searchProducts')->middleware('permission:products-search');
+            Route::post('validate-stock', 'validateStock')/* ->middleware('permission:products-validate-stock') */;
         });
     });
 });

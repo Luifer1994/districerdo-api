@@ -6,12 +6,13 @@
 
 namespace App\Models;
 
+use App\Http\Modules\Batchs\Models\Batch;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Entrance
- * 
+ *
  * @property int $id
  * @property float $quantity
  * @property int $batch_id
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $purchase_line_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
+ *
  * @property Batch $batch
  * @property Product $product
  * @property PurchaseLine $purchase_line
@@ -48,7 +49,7 @@ class Entrance extends Model
 		'purchase_line_id'
 	];
 
-	public function batch()
+	public function Batch()
 	{
 		return $this->belongsTo(Batch::class);
 	}
