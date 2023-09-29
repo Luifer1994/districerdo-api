@@ -41,7 +41,7 @@ class InvoiceRepository extends RepositoryBase
             }, 'total')
             ->withCount(['InvoiceLines'])
             ->when($state, function ($query, $state) {
-                return $query->where('status', $state);
+                return $query->where('state', $state);
             })
             ->when(($dateStart && $dateEnd), function ($query) use ($dateStart, $dateEnd) {
                 $startDate = \DateTime::createFromFormat('d-m-Y', $dateStart)->format('Y-m-d');
