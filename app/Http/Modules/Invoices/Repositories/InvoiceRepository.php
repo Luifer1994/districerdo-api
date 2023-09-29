@@ -79,7 +79,7 @@ class InvoiceRepository extends RepositoryBase
 
             ->with([
                 'Client' => function ($query) {
-                    $query->select('id', 'name', 'last_name','address','phone','document_number')
+                    $query->select('id', 'name', 'last_name', 'address', 'phone', 'document_number')
                         ->selectRaw('CONCAT(name, " ", last_name) as full_name');
                 }
             ])
@@ -97,5 +97,22 @@ class InvoiceRepository extends RepositoryBase
             ->withCount(['InvoiceLines'])
             ->where('id', $id)
             ->first();
+    }
+
+    /**
+     * Total amount for month where state is paid.
+     *
+     */
+    public function totalAmountForMonth(): float
+    {
+        $result = $this->InvoiceModel
+            ->selectRaw('COALESCE(SUM(invoice_lines.price * invoice_lines.quantity), 0) as total')
+            ->join('invoice_lines', 'invoices.id', '=', 'invoice_lines.invoice_id')
+            ->where('invoices.state', 'paid')
+            ->whereMonth('invoices.created_at', now()->format('m'))
+            ->first();
+
+        // Verificar si $result es null y devolver 0 en ese caso
+        return $result ? (float) $result->total : 0;
     }
 }

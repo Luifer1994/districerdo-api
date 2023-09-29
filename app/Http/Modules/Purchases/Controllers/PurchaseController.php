@@ -98,4 +98,19 @@ class PurchaseController extends Controller
             return $this->errorResponse('Error al pagar compra', Response::HTTP_BAD_REQUEST);
         }
     }
+
+    /**
+     * Get total amount for month.
+     *
+     * @return JsonResponse
+     */
+    function totalAmountForMonth(): JsonResponse
+    {
+        try {
+            $data = $this->PurchaseRepository->totalAmountForMonth();
+            return $this->successResponse($data);
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
 }

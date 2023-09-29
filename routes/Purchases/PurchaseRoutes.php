@@ -16,6 +16,7 @@ Route::prefix('purchases')->group(function () {
             Route::post('create', 'store')->middleware('permission:purchases-create');
             Route::get('show/{id}', 'show')->middleware('permission:purchases-show');
             Route::put('paid/{id}', 'paid')->middleware('permission:purchases-update');
+            Route::get('total-amount-for-month', 'totalAmountForMonth');
         });
     });
 });

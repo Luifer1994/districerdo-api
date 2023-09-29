@@ -97,4 +97,21 @@ class PurchaseRepository extends RepositoryBase
     {
         return $this->PurchaseModel->where('code', $code)->first();
     }
+
+    /**
+     * Total amount for month where state is paid.
+     *
+     */
+    public function totalAmountForMonth(): float
+    {
+        $result = $this->PurchaseModel
+            ->selectRaw('COALESCE(SUM(purchase_lines.price * purchase_lines.quantity), 0) as total')
+            ->join('purchase_lines', 'purchases.id', '=', 'purchase_lines.purchase_id')
+            ->where('purchases.status', 'PAID')
+            ->whereMonth('purchases.created_at', now()->format('m'))
+            ->first();
+
+        // Verificar si $result es null y devolver 0 en ese caso
+        return $result ? (float) $result->total : 0;
+    }
 }
