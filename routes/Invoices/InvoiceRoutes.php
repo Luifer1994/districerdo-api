@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('invoices')->group(function () {
-    Route::group([/* 'middleware' => 'jwt.verify' */], function () {
+    Route::group(['middleware' => 'jwt.verify'], function () {
         Route::controller(InvoiceController::class)->group(function () {
-            Route::get('list', 'index')/* ->middleware('permission:invoices-list') */;
-            Route::post('create', 'store')/* ->middleware('permission:invoices-create') */;
-            Route::get('show/{id}', 'show')/* ->middleware('permission:invoices-show') */;
-            Route::put('paid/{id}', 'paid')/* ->middleware('permission:invoices-paid') */;
-            Route::put('cancel/{id}', 'cancel')/* ->middleware('permission:invoices-cancel') */;
-            Route::get('download/{id}', 'download')/* ->middleware('permission:invoices-download') */;
+            Route::get('list', 'index')->middleware('permission:invoices-list');
+            Route::post('create', 'store')->middleware('permission:invoices-create');
+            Route::get('show/{id}', 'show')->middleware('permission:invoices-show');
+            Route::put('paid/{id}', 'paid')->middleware('permission:invoices-paid');
+            Route::put('cancel/{id}', 'cancel')->middleware('permission:invoices-cancel');
+            Route::get('download/{id}', 'download')->middleware('permission:invoices-download');
         });
     });
 });

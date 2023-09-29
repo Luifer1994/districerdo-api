@@ -53,8 +53,18 @@ class InvoicePermissionsManyCommand extends Command
                     "group"       => 'Facturas'
                 ],
                 [
-                    "name"        => 'invoices-update',
-                    "description" => 'Actualizar facturas',
+                    "name"        => 'invoices-paid',
+                    "description" => 'Pagar facturas',
+                    "group"       => 'Facturas'
+                ],
+                [
+                    "name"        => 'invoices-cancel',
+                    "description" => 'Cancelar facturas',
+                    "group"       => 'Facturas'
+                ],
+                [
+                    "name"        => 'invoices-download',
+                    "description" => 'Descargar facturas',
                     "group"       => 'Facturas'
                 ]
             ];

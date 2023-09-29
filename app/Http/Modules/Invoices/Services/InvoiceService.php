@@ -224,7 +224,8 @@ class InvoiceService
             return [
                 'status' => true,
                 'message' => 'Factura descargada con éxito',
-                'data' => base64_encode($invoice)
+                'data' => ['base64'=>base64_encode($invoice),'code'=>$data['code']]
+
             ];
         } catch (\Throwable $th) {
             return [

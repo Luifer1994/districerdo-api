@@ -78,10 +78,10 @@ class PurchaseService
             }
 
             DB::commit();
-            return ['res' => true, 'message' => 'Compra creada correctamente'];
+            return ['res' => true, 'message' => 'Compra creada correctamente',"data"=>$newPurchase];
         } catch (\Throwable $th) {
             DB::rollBack();
-            return ['res' => false, 'message' => 'Error al crear la compra'];
+            return ['res' => false, 'message' => 'Error al crear la compra',"data"=>null];
         }
     }
 

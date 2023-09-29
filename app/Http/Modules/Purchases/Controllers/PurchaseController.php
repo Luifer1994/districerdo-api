@@ -53,7 +53,7 @@ class PurchaseController extends Controller
             $newPurchase = $this->PurchaseService->createPurchase($request);
 
             if ($newPurchase['res'])
-                return $this->successResponse(null, $newPurchase['message'], Response::HTTP_CREATED);
+                return $this->successResponse($newPurchase['data'], $newPurchase['message'], Response::HTTP_CREATED);
             else
                 return $this->errorResponse($newPurchase['message'], Response::HTTP_BAD_REQUEST);
         } catch (\Throwable $th) {
