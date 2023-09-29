@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('cities')->group(function () {
     Route::group(['middleware' => 'jwt.verify'], function () {
         Route::controller(CityController::class)->group(function () {
-            Route::get('list', 'index')->middleware('permission:cities-list');
+            Route::get('list', 'index')/* ->middleware('permission:cities-list') */;
         });
     });
 });
