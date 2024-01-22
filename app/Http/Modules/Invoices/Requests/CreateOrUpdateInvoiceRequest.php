@@ -32,7 +32,7 @@ class CreateOrUpdateInvoiceRequest extends FormRequest
             'client_id'                                             => 'required|exists:clients,id',
             'invoice_lines'                                         => 'required|array',
             'invoice_lines.*.price'                                 => 'required|numeric',
-            'invoice_lines.*.quantity'                              => 'required|integer|min:1',
+            'invoice_lines.*.quantity'                              => 'required|numeric|min:1',
             'invoice_lines.*.product_id'                            => 'required|exists:products,id',
             'invoice_lines.*.batch'                              => 'required|exists:batches,code',
         ];
