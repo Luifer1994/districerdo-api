@@ -3,6 +3,7 @@
 namespace App\Http\Modules\Invoices\Models;
 
 use App\Http\Modules\Clients\Models\Client;
+use App\Http\Modules\Users\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -104,5 +105,15 @@ class Invoice extends Model implements AuditableContract
     public function User(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relation to partial payments of invoice.
+     *
+     * @return HasMany
+     */
+    public function PartialPaymentsOfInvoice(): HasMany
+    {
+        return $this->hasMany(PartialPaymentsOfInvoice::class);
     }
 }

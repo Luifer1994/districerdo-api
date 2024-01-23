@@ -4,21 +4,26 @@ namespace App\Http\Modules\Invoices\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Modules\Bases\PaginateBaseRequest;
+use App\Http\Modules\Invoices\Models\PartialPaymentsOfInvoice;
 use App\Http\Modules\Invoices\Repositories\InvoiceRepository;
+use App\Http\Modules\Invoices\Repositories\PartialPaymentsOfInvoiceRepository;
 use App\Http\Modules\Invoices\Requests\CreateOrUpdateInvoiceRequest;
+use App\Http\Modules\Invoices\Requests\CreatePaymentPartialInvoiceRequest;
 use App\Http\Modules\Invoices\Services\InvoiceService;
+use App\Traits\FileStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class InvoiceController extends Controller
 {
-    protected $InvoiceRepository, $InvoiceService;
+    protected $InvoiceRepository, $InvoiceService, $PartialPaymentsOfInvoiceRepository;
 
-    public function __construct(InvoiceRepository $InvoiceRepository, InvoiceService $InvoiceService)
+    public function __construct(InvoiceRepository $InvoiceRepository, InvoiceService $InvoiceService, PartialPaymentsOfInvoiceRepository $PartialPaymentsOfInvoiceRepository)
     {
         $this->InvoiceRepository = $InvoiceRepository;
         $this->InvoiceService = $InvoiceService;
+        $this->PartialPaymentsOfInvoiceRepository = $PartialPaymentsOfInvoiceRepository;
     }
 
     /**
@@ -91,18 +96,12 @@ class InvoiceController extends Controller
     function paid(int $id): JsonResponse
     {
         try {
-            $data = $this->InvoiceRepository->find($id);
-            if (!$data)
-                return $this->errorResponse('Factura no encontrada', Response::HTTP_NOT_FOUND);
+            $res = $this->InvoiceService->payInvoice($id);
 
-            if ($data->state == 'PAID')
-                return $this->errorResponse('La factura ya se encuentra pagada', Response::HTTP_BAD_REQUEST);
+            if (!$res->status)
+                return $this->errorResponse($res->message, Response::HTTP_BAD_REQUEST);
 
-            if ($data->state == 'CANCELLED')
-                return $this->errorResponse('La factura se encuentra cancelada', Response::HTTP_BAD_REQUEST);
-
-            $data->state = 'PAID';
-            return $this->successResponse($this->InvoiceRepository->save($data), 'Factura pagada con éxito');
+            return $this->successResponse($res->data, $res->message);
         } catch (\Throwable $th) {
             return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
         }
@@ -148,6 +147,26 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Download Evidence.
+     *
+     * @param int $evidenceId
+     * @return JsonResponse
+     */
+    function downloadEvidence(int $evidenceId)
+    {
+        try {
+            $data = $this->InvoiceService->downloadEvidence($evidenceId);
+
+            if (!$data['status'])
+                return $this->errorResponse($data['message'], Response::HTTP_BAD_REQUEST);
+
+            return $this->successResponse($data['data'], $data['message']);
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    /**
      * Get total amount for month.
      *
      * @return JsonResponse
@@ -157,6 +176,27 @@ class InvoiceController extends Controller
         try {
             $data = $this->InvoiceRepository->totalAmountForMonth();
             return $this->successResponse($data);
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Partial payment of invoice.
+     *
+     * @param CreatePaymentPartialInvoiceRequest $request
+     * @return JsonResponse
+     */
+    function partialPayment(CreatePaymentPartialInvoiceRequest $request): JsonResponse
+    {
+        try {
+            $res = $this->InvoiceService->partialPayment($request);
+
+            if (!$res->status)
+                return $this->errorResponse($res->message, Response::HTTP_BAD_REQUEST);
+
+            return $this->successResponse($res->data, $res->message);
+
         } catch (\Throwable $th) {
             return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
         }

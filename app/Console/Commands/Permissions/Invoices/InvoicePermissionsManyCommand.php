@@ -66,7 +66,17 @@ class InvoicePermissionsManyCommand extends Command
                     "name"        => 'invoices-download',
                     "description" => 'Descargar facturas',
                     "group"       => 'Facturas'
-                ]
+                ],
+                [
+                    "name"        => 'invoices-partial-payment',
+                    "description" => 'Pago parcial de facturas',
+                    "group"       => 'Facturas'
+                ],
+                [
+                    "name"        => 'invoices-download-evidence',
+                    "description" => 'Descargar evidencia de pago de facturas',
+                    "group"       => 'Facturas'
+                ],
             ];
             $role        = Role::where('name', 'admin')->first();
             foreach ($permisions as  $value) {

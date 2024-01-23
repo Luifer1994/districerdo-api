@@ -29,6 +29,14 @@
 </head>
 
 <body>
+    @php
+        $colors = [
+            'Pagada' => '#61F065', // Verde para pagado
+            'Pendiente' => '#FFBA42', // Naranja para pendiente
+            'Cancelada' => '#FF5E42', // Rojo para vencido
+            'default' => 'rgb(153, 153, 153)', // Gris para otros estados
+        ];
+    @endphp
 
     <table width="100%">
         <tr>
@@ -64,7 +72,13 @@
                         {{ $data['code'] }}
                     </span>
                 </h3>
-
+                <h3>
+                    FACTURA
+                    <span
+                        style="background-color: {{ $colors[$data['state']] ?? $colors['default'] }}; padding:2px; border-radius:4%">
+                        {{ $data['state'] }}
+                    </span>
+                </h3>
             </td>
         </tr>
     </table>
@@ -133,9 +147,23 @@
         <tfoot>
             <tr>
                 <td colspan="4"></td>
-                <td align="right">TOTAL</td>
+                <td align="right">TOTAL FACTURA</td>
                 <td align="right" class="gray">$
                     {{ number_format($data['total'], 0, ',', '.') }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4"></td>
+                <td align="right">PENDIENTE POR PAGAR</td>
+                <td align="right" class="gray">$
+                    {{ number_format($data['total_for_pay'], 0, ',', '.') }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4"></td>
+                <td align="right">TOTAL PAGADO</td>
+                <td align="right" class="gray">$
+                    {{ number_format($data['total_paid'], 0, ',', '.') }}
                 </td>
             </tr>
         </tfoot>

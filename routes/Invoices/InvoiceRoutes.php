@@ -19,6 +19,8 @@ Route::prefix('invoices')->group(function () {
             Route::put('cancel/{id}', 'cancel')->middleware('permission:invoices-cancel');
             Route::get('download/{id}', 'download')->middleware('permission:invoices-download');
             Route::get('total-amount-for-month', 'totalAmountForMonth');
+            Route::post('partial-payment', 'partialPayment')->middleware('permission:invoices-partial-payment');
+            Route::get('download-evidence/{id}', 'downloadEvidence')->middleware('permission:invoices-download-evidence');
         });
     });
 });

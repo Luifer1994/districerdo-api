@@ -4,6 +4,7 @@ namespace App\Http\Modules\Invoices\Repositories;
 
 use App\Http\Modules\Bases\RepositoryBase;
 use App\Http\Modules\Invoices\Models\Invoice;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceRepository extends RepositoryBase
 {
@@ -39,6 +40,18 @@ class InvoiceRepository extends RepositoryBase
                     ->from('invoice_lines')
                     ->whereColumn('invoice_id', 'invoices.id');
             }, 'total')
+
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->from('partial_payments_of_invoices')
+                    ->whereColumn('invoice_id', 'invoices.id');
+            }, 'total_paid')
+            ->selectSub(function ($query) {
+                $query->from('invoices as inv')
+                      ->selectRaw('COALESCE((SELECT SUM(il.price * il.quantity) FROM invoice_lines as il WHERE il.invoice_id = inv.id), 0) - COALESCE((SELECT SUM(pp.amount) FROM partial_payments_of_invoices as pp WHERE pp.invoice_id = inv.id), 0)')
+                      ->where('inv.id', '=', DB::raw('invoices.id'));
+            }, 'total_for_pay')
+
             ->withCount(['InvoiceLines'])
             ->when($state, function ($query, $state) {
                 return $query->where('state', $state);
@@ -75,11 +88,29 @@ class InvoiceRepository extends RepositoryBase
     public function getInvoiceById(int $id): ?object
     {
         return $this->InvoiceModel
-            ->select('id', 'code', 'client_id', 'state', 'created_at')
+            ->select('id', 'code', 'client_id', 'state', 'created_at', 'observation', 'user_id')
 
             ->with([
                 'Client' => function ($query) {
-                    $query->select('id', 'name', 'last_name', 'address', 'phone', 'document_number')
+                    $query->select('id', 'name', 'last_name', 'address', 'phone', 'document_number', 'city_id', 'document_type_id', 'email')
+                        ->selectRaw('CONCAT(name, " ", last_name) as full_name')
+                        ->with(['City' => function ($query) {
+                            $query->select('id', 'name');
+                        }])
+                        ->with(['DocumentType' => function ($query) {
+                            $query->select('id', 'name', 'code');
+                        }]);
+                }, 'PartialPaymentsOfInvoice' => function ($query) {
+                    $query->select('id', 'amount', 'invoice_id', 'created_at', 'evidence', 'description')
+                        ->with(['User' => function ($query) {
+                            $query->select('id', 'name', 'last_name')
+                                ->selectRaw('CONCAT(name, " ", last_name) as full_name');
+                        }])
+                        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as date')
+                        ->orderBy('id', 'desc');
+                },
+                'User' => function ($query) {
+                    $query->select('id', 'name', 'last_name')
                         ->selectRaw('CONCAT(name, " ", last_name) as full_name');
                 }
             ])
@@ -88,12 +119,40 @@ class InvoiceRepository extends RepositoryBase
                     ->from('invoice_lines')
                     ->whereColumn('invoice_id', 'invoices.id');
             }, 'total')
-            ->with(['InvoiceLines' => fn ($query)
-            => $query->select('id', 'price', 'quantity', 'invoice_id', 'product_id', 'batch_id')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->from('partial_payments_of_invoices')
+                    ->whereColumn('invoice_id', 'invoices.id');
+            }, 'total_paid')
+            ->selectSub(function ($query) {
+                $query->from('invoices as inv')
+                      ->selectRaw('COALESCE((SELECT SUM(il.price * il.quantity) FROM invoice_lines as il WHERE il.invoice_id = inv.id), 0) - COALESCE((SELECT SUM(pp.amount) FROM partial_payments_of_invoices as pp WHERE pp.invoice_id = inv.id), 0)')
+                      ->where('inv.id', '=', DB::raw('invoices.id'));
+            }, 'total_for_pay')
+
+
+            ->with(['InvoiceLines' => function ($query) {
+                $query->select(
+                    'id',
+                    'price',
+                    'quantity',
+                    'invoice_id',
+                    'product_id',
+                    'batch_id',
+                    // Añadir el cálculo del total de la línea directamente en el select
+                    DB::raw('COALESCE(price * quantity, 0) as total_line')
+                )
                 ->with([
-                    'Product' => fn ($query) => $query->select('id', 'name', 'sku', 'description'),
-                    'Batch' => fn ($query) => $query->select('id', 'code')
-                ])])
+                    'Product' => function ($query) {
+                        $query->select('id', 'name', 'sku', 'description');
+                    },
+                    'Batch' => function ($query) {
+                        $query->select('id', 'code');
+                    }
+                ]);
+            }])
+
+
             ->withCount(['InvoiceLines'])
             ->where('id', $id)
             ->first();
@@ -108,7 +167,7 @@ class InvoiceRepository extends RepositoryBase
         $result = $this->InvoiceModel
             ->selectRaw('COALESCE(SUM(invoice_lines.price * invoice_lines.quantity), 0) as total')
             ->join('invoice_lines', 'invoices.id', '=', 'invoice_lines.invoice_id')
-            ->where('invoices.state', 'paid')
+            ->where('invoices.state', '!=', 'CANCELLED')
             ->whereMonth('invoices.created_at', now()->format('m'))
             ->first();
 
