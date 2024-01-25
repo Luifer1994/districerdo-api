@@ -154,18 +154,19 @@
             </tr>
             <tr>
                 <td colspan="4"></td>
+                <td align="right">TOTAL PAGADO</td>
+                <td align="right" class="gray">
+                 - $ {{ number_format($data['total_paid'], 0, ',', '.') }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4"></td>
                 <td align="right">PENDIENTE POR PAGAR</td>
                 <td align="right" class="gray">$
                     {{ number_format($data['total_for_pay'], 0, ',', '.') }}
                 </td>
             </tr>
-            <tr>
-                <td colspan="4"></td>
-                <td align="right">TOTAL PAGADO</td>
-                <td align="right" class="gray">$
-                    {{ number_format($data['total_paid'], 0, ',', '.') }}
-                </td>
-            </tr>
+
         </tfoot>
     </table>
 

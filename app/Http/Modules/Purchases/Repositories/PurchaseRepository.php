@@ -4,6 +4,7 @@ namespace App\Http\Modules\Purchases\Repositories;
 
 use App\Http\Modules\Bases\RepositoryBase;
 use App\Http\Modules\Purchases\Models\Purchase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PurchaseRepository extends RepositoryBase
@@ -40,6 +41,16 @@ class PurchaseRepository extends RepositoryBase
                     ->from('purchase_lines')
                     ->whereColumn('purchase_id', 'purchases.id');
             }, 'total')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->from('partial_payments_of_purchases')
+                    ->whereColumn('purchase_id', 'purchases.id');
+            }, 'total_paid')
+            ->selectSub(function ($query) {
+                $query->from('purchases as inv')
+                    ->selectRaw('COALESCE((SELECT SUM(il.price * il.quantity) FROM purchase_lines as il WHERE il.purchase_id = inv.id), 0) - COALESCE((SELECT SUM(pp.amount) FROM partial_payments_of_purchases as pp WHERE pp.purchase_id = inv.id), 0)')
+                    ->where('inv.id', '=', DB::raw('purchases.id'));
+            }, 'total_for_pay')
             ->when($state, function ($query, $state) {
                 return $query->where('status', $state);
             })
@@ -66,15 +77,42 @@ class PurchaseRepository extends RepositoryBase
      */
     public function findById(int $id): ?object
     {
-        return $this->PurchaseModel->select('id', 'code', 'provider_id', 'status', 'created_at')
+        return $this->PurchaseModel->select('id', 'code', 'provider_id', 'status', 'created_at', 'user_id')
             ->with([
-                'Provider' => fn ($q) => $q->select('id', 'name', 'last_name')
-                    ->selectRaw('CONCAT(name, " ", last_name) as full_name'),
-                'PurchaseLines' => fn ($q) => $q->select('id', 'price', 'quantity', 'purchase_id', 'product_id')
+                'Provider' => fn ($q) => $q->select('id', 'name', 'last_name', 'document_number', 'city_id', 'document_type_id', 'address', 'phone', 'email')
+                    ->selectRaw('CONCAT(name, " ", last_name) as full_name')
+                    ->with(['City' => function ($query) {
+                        $query->select('id', 'name');
+                    }])
+                    ->with(['DocumentType' => function ($query) {
+                        $query->select('id', 'name', 'code');
+                    }]),
+                'PurchaseLines' => fn ($q) => $q->select(
+                    'id',
+                    'price',
+                    'quantity',
+                    'purchase_id',
+                    'product_id',
+                    // Añadir el cálculo del total de la línea directamente en el select
+                    DB::raw('COALESCE(price * quantity, 0) as total_line')
+                )
                     ->with(['Product:id,sku,name,description', 'Entrance' => function ($q) {
                         $q->select('id', 'purchase_line_id', 'quantity', 'batch_id', 'product_id')
                             ->with('Batch:id,code');
-                    }])
+                    }]),
+                'PartialPaymentsOfPurchase' => function ($query) {
+                    $query->select('id', 'amount', 'purchase_id', 'created_at', 'evidence', 'description')
+                        ->with(['User' => function ($query) {
+                            $query->select('id', 'name', 'last_name')
+                                ->selectRaw('CONCAT(name, " ", last_name) as full_name');
+                        }])
+                        ->selectRaw('DATE_FORMAT(created_at, "%d-%m-%Y") as date')
+                        ->orderBy('id', 'desc');
+                },
+                'User' => function ($query) {
+                    $query->select('id', 'name', 'last_name')
+                        ->selectRaw('CONCAT(name, " ", last_name) as full_name');
+                }
             ])
             ->withCount('PurchaseLines as total_products')
             ->selectSub(function ($query) {
@@ -82,6 +120,16 @@ class PurchaseRepository extends RepositoryBase
                     ->from('purchase_lines')
                     ->whereColumn('purchase_id', 'purchases.id');
             }, 'total')
+            ->selectSub(function ($query) {
+                $query->selectRaw('COALESCE(SUM(amount), 0)')
+                    ->from('partial_payments_of_purchases')
+                    ->whereColumn('purchase_id', 'purchases.id');
+            }, 'total_paid')
+            ->selectSub(function ($query) {
+                $query->from('purchases as inv')
+                    ->selectRaw('COALESCE((SELECT SUM(il.price * il.quantity) FROM purchase_lines as il WHERE il.purchase_id = inv.id), 0) - COALESCE((SELECT SUM(pp.amount) FROM partial_payments_of_purchases as pp WHERE pp.purchase_id = inv.id), 0)')
+                    ->where('inv.id', '=', DB::raw('purchases.id'));
+            }, 'total_for_pay')
             ->where('id', $id)
             ->first();
     }

@@ -13,9 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('partial_payments_of_invoices', function (Blueprint $table) {
+        Schema::create('partial_payments_of_purchases', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->constrained('invoices')->comment('Relation with invoices table');
+            $table->foreignId('purchase_id')->constrained('purchases')->comment('Purchase of partial payment');
             $table->float('amount', 20, 2)->comment('Amount of partial payment');
             $table->string('evidence')->nullable()->comment('Evidence of partial payment');
             $table->string('description')->nullable()->comment('Description of partial payment');
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('partial_payments_of_invoices');
+        Schema::dropIfExists('partial_payments_of_purchases');
     }
 };

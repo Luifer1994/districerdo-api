@@ -56,6 +56,16 @@ class PurchasePermissionsManyCommand extends Command
                     "name"        => 'purchases-update',
                     "description" => 'Actualizar compras',
                     "group"       => 'Compras'
+                ],
+                [
+                    "name"        => 'purchases-partial-payment',
+                    "description" => 'Pago parcial de Compras',
+                    "group"       => 'Compras'
+                ],
+                [
+                    "name"        => 'purchases-download-evidence',
+                    "description" => 'Descargar evidencia de pago de Compras',
+                    "group"       => 'Compras'
                 ]
             ];
             $role        = Role::where('name', 'admin')->first();

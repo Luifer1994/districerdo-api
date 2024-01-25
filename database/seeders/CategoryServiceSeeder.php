@@ -44,7 +44,23 @@ class CategoryServiceSeeder extends Seeder
                     'OSOBUCO',
                     'OTROS'
                 ]
-            ]
+                ],
+            [
+                'name' => 'Res',
+                'products' => []
+            ],
+            [
+                'name' => 'Pollo',
+                'products' => []
+            ],
+            [
+                'name' => 'Pescado',
+                'products' => []
+            ],
+            [
+                'name' => 'Embutidos',
+                'products' => []
+            ],
         ];
 
         foreach ($categories as $categoryInfo) {

@@ -9,17 +9,21 @@ use App\Http\Modules\Entrances\Models\Entrance;
 use App\Http\Modules\Entrances\Repositories\EntranceRepository;
 use App\Http\Modules\Inventories\Models\Inventory;
 use App\Http\Modules\Inventories\Repositories\InventoryRepository;
+use App\Http\Modules\Purchases\Models\PartialPaymentsOfPurchase;
 use App\Http\Modules\Purchases\Models\Purchase;
 use App\Http\Modules\Purchases\Models\PurchaseLine;
+use App\Http\Modules\Purchases\Repositories\PartialPaymentsOfIPurchaseRepository;
 use App\Http\Modules\Purchases\Repositories\PurchaseLineRepository;
 use App\Http\Modules\Purchases\Repositories\PurchaseRepository;
 use App\Http\Modules\Purchases\Requests\CreateOrUpdatePurchaseRequest;
+use App\Http\Modules\Purchases\Requests\CreatePaymentPartialPurchaseRequest;
+use App\Traits\FileStorage;
 use App\Traits\GenerateCodeRandom;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseService
 {
-    use GenerateCodeRandom;
+    use GenerateCodeRandom, FileStorage;
 
     public function __construct(
         protected PurchaseRepository $purchaseRepository,
@@ -27,7 +31,8 @@ class PurchaseService
         protected EntranceRepository $entranceRepository,
         protected BatchService $batchService,
         protected BatchRepository $batchRepository,
-        protected InventoryRepository $inventoryRepository
+        protected InventoryRepository $inventoryRepository,
+        protected PartialPaymentsOfIPurchaseRepository $PartialPaymentsOfIPurchaseRepository
     ) {
     }
 
@@ -110,16 +115,181 @@ class PurchaseService
      */
     public function paidPurchase(int $id): array
     {
+        DB::beginTransaction();
         try {
-            $purchase = $this->purchaseRepository->find($id);
+            $purchase = $this->purchaseRepository->findById($id);
             if (!$purchase) {
-                return ['res' => false, 'message' => 'Compra no encontrada'];
+                DB::rollBack();
+                return [
+                    'status' => false,
+                    'message' => 'compra no encontrada',
+                    'data' => null
+                ];
             }
-            $purchase->status = 'paid';
-            $this->purchaseRepository->save($purchase);
-            return ['res' => true, 'message' => 'Compra pagada correctamente'];
+
+            if ($purchase->status == 'PAGADA') {
+                DB::rollBack();
+                return [
+                    'status' => false,
+                    'message' => 'La compra ya se encuentra pagada',
+                    'data' => null
+                ];
+            }
+
+            if ($purchase->status == 'Cancelada') {
+                DB::rollBack();
+                return [
+                    'status' => false,
+                    'message' => 'La compra se encuentra cancelada',
+                    'data' => null
+                ];
+            }
+            $this->PartialPaymentsOfIPurchaseRepository->save(new PartialPaymentsOfPurchase([
+                'purchase_id' => $purchase->id,
+                'amount' => $purchase->total_for_pay,
+                'user_id' => auth()->user()->id,
+                'description' => 'Pago total de la compra'
+            ]));
+            $purchase->status = 'PAID';
+            $purchase = $this->purchaseRepository->save($purchase);
+
+
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'message' => 'compra pagada con éxito',
+                'data' => $purchase
+            ];
         } catch (\Throwable $th) {
-            return ['res' => false, 'message' => 'Error al pagar la compra'];
+            DB::rollBack();
+
+            return [
+                'status' => false,
+                'message' => 'Error al pagar la compra '. $th->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+
+    /**
+     * Partial payment of purchase.
+     *
+     * @param CreatePaymentPartialPurchaseRequest $request
+     * @return object
+     */
+    public function partialPayment(CreatePaymentPartialPurchaseRequest $request): object
+    {
+        DB::beginTransaction();
+        try {
+            $purchase = $this->purchaseRepository->findById($request->purchase_id);
+            if (!$purchase) {
+                DB::rollBack();
+                return (object) [
+                    'status' => false,
+                    'message' => 'Compra no encontrada',
+                    'data' => null
+                ];
+            }
+
+            if ($purchase->status == 'PAGADA') {
+                DB::rollBack();
+                return (object) [
+                    'status' => false,
+                    'message' => 'La compra ya se encuentra pagada',
+                    'data' => null
+                ];
+            }
+
+            if ($purchase->status == 'Cancelada') {
+                DB::rollBack();
+                return (object) [
+                    'status' => false,
+                    'message' => 'La compra se encuentra cancelada',
+                    'data' => null
+                ];
+            }
+
+            if ($request->amount > $purchase->total_for_pay) {
+                DB::rollBack();
+                return (object) [
+                    'status' => false,
+                    'message' => 'El monto a pagar es mayor al monto pendiente de la compra ($' . number_format($purchase->total_for_pay, 0, '.', '.') . ')',
+                    'data' => null
+                ];
+            }
+
+
+            $partial = $this->PartialPaymentsOfIPurchaseRepository->save(new PartialPaymentsOfPurchase([
+                'purchase_id' => $purchase->id,
+                'amount' => $request->amount,
+                'evidence' => ($request->has('evidence') && $request->file('evidence') != null) ? $this->uploadFile($request->file('evidence')) : null,
+                'user_id' => auth()->user()->id,
+                'description' => $request->description
+            ]));
+
+            if ($purchase->total_for_pay == $request->amount) {
+                $purchase->status = 'PAID';
+                $purchase = $this->purchaseRepository->save($purchase);
+            }
+
+            DB::commit();
+
+            return (object) [
+                'status' => true,
+                'message' => 'Pago parcial de compra realizado con éxito',
+                'data' => $partial
+            ];
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            return (object) [
+                'status' => false,
+                'message' => 'Error al realizar el pago parcial de la compra ',
+                'data' => null
+            ];
+        }
+    }
+
+    /**
+     * Download evidence.
+     *
+     * @param int $id
+     * @return array
+     */
+    public function downloadEvidence(int $id): array
+    {
+        try {
+            $data = $this->PartialPaymentsOfIPurchaseRepository->find($id);
+
+            if (!$data)
+                return [
+                    'status' => false,
+                    'message' => 'Pago parcial de compra no encontrado',
+                    'data' => null
+                ];
+            if (!$data->evidence)
+                return [
+                    'status' => false,
+                    'message' => 'No se encontró evidencia de pago',
+                    'data' => null
+                ];
+            //sear file in storage
+            $file = $this->getFile($data->evidence);
+
+            return [
+                'status' => true,
+                'message' => 'Compra descargada con éxito',
+                'data' => ['base64' => base64_encode($file), 'code' => $data->id]
+
+            ];
+        } catch (\Throwable $th) {
+            return [
+                'status' => false,
+                'message' => 'Error al descargar la compra',
+                'data' => null
+            ];
         }
     }
 }

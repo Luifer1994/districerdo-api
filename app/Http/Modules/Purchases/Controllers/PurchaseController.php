@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Modules\Bases\PaginateBaseRequest;
 use App\Http\Modules\Purchases\Repositories\PurchaseRepository;
 use App\Http\Modules\Purchases\Requests\CreateOrUpdatePurchaseRequest;
+use App\Http\Modules\Purchases\Requests\CreatePaymentPartialPurchaseRequest;
 use App\Http\Modules\Purchases\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -90,12 +91,13 @@ class PurchaseController extends Controller
     {
         try {
             $paidPurchase = $this->PurchaseService->paidPurchase($id);
-            if ($paidPurchase['res'])
+            if ($paidPurchase['status'])
                 return $this->successResponse(null, $paidPurchase['message'], Response::HTTP_CREATED);
             else
                 return $this->errorResponse($paidPurchase['message'], Response::HTTP_BAD_REQUEST);
         } catch (\Throwable $th) {
-            return $this->errorResponse('Error al pagar compra', Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse('Error al pagar compra' . $th->getMessage(),
+             Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -109,6 +111,47 @@ class PurchaseController extends Controller
         try {
             $data = $this->PurchaseRepository->totalAmountForMonth();
             return $this->successResponse($data);
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Partial payment of Purchase.
+     *
+     * @param CreatePaymentPartialPurchaseRequest $request
+     * @return JsonResponse
+     */
+    function partialPayment(CreatePaymentPartialPurchaseRequest $request): JsonResponse
+    {
+        try {
+            $res = $this->PurchaseService->partialPayment($request);
+
+            if (!$res->status)
+                return $this->errorResponse($res->message, Response::HTTP_BAD_REQUEST);
+
+            return $this->successResponse($res->data, $res->message);
+
+        } catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Download Evidence.
+     *
+     * @param int $evidenceId
+     * @return JsonResponse
+     */
+    function downloadEvidence(int $evidenceId)
+    {
+        try {
+            $data = $this->PurchaseService->downloadEvidence($evidenceId);
+
+            if (!$data['status'])
+                return $this->errorResponse($data['message'], Response::HTTP_BAD_REQUEST);
+
+            return $this->successResponse($data['data'], $data['message']);
         } catch (\Throwable $th) {
             return $this->errorResponse($th->getMessage(), Response::HTTP_BAD_REQUEST);
         }

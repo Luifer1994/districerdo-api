@@ -17,6 +17,8 @@ Route::prefix('purchases')->group(function () {
             Route::get('show/{id}', 'show')->middleware('permission:purchases-show');
             Route::put('paid/{id}', 'paid')->middleware('permission:purchases-update');
             Route::get('total-amount-for-month', 'totalAmountForMonth');
+            Route::post('partial-payment', 'partialPayment')->middleware('permission:purchases-partial-payment');
+            Route::get('download-evidence/{id}', 'downloadEvidence')->middleware('permission:purchases-download-evidence');
         });
     });
 });

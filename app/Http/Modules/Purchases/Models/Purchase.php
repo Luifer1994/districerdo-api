@@ -72,4 +72,9 @@ class Purchase extends Model
     {
         return $this->hasMany(PurchaseLine::class);
     }
+
+    public function PartialPaymentsOfPurchase()
+    {
+        return $this->hasMany(PartialPaymentsOfPurchase::class);
+    }
 }

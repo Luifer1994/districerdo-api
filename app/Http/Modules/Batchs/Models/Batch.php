@@ -6,6 +6,7 @@
 
 namespace App\Http\Modules\Batchs\Models;
 
+use App\Http\Modules\Entrances\Models\Entrance;
 use App\Http\Modules\Invoices\Models\InvoiceLine;
 use App\Models\Output;
 use Carbon\Carbon;

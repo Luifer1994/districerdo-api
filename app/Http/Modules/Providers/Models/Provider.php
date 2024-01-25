@@ -8,6 +8,7 @@ namespace App\Http\Modules\Providers\Models;
 
 use App\Http\Modules\Cities\Models\City;
 use App\Http\Modules\DocumentTypes\Models\DocumentType;
+use App\Http\Modules\Purchases\Models\Purchase as ModelsPurchase;
 use App\Models\Purchase;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -66,6 +67,6 @@ class Provider extends Model
 
 	public function Purchases()
 	{
-		return $this->hasMany(Purchase::class);
+		return $this->hasMany(ModelsPurchase::class);
 	}
 }
